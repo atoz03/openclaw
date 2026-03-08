@@ -703,6 +703,9 @@ export function registerPluginsCli(program: Command) {
       if (result.actions.loadPath) {
         removed.push("load path");
       }
+      if (result.actions.channelConfig) {
+        removed.push("channel config");
+      }
       if (result.actions.memorySlot) {
         removed.push("memory slot");
       }

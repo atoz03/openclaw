@@ -229,6 +229,32 @@ describe("removePluginFromConfig", () => {
     expect(actions.memorySlot).toBe(false);
   });
 
+  it("removes channel config section that matches plugin id", () => {
+    const config: OpenClawConfig = {
+      channels: {
+        "my-plugin": {
+          enabled: true,
+          botToken: "fake-token",
+        },
+        telegram: {
+          enabled: true,
+          botToken: "fake-telegram-token",
+        },
+      },
+      plugins: {
+        entries: {
+          "my-plugin": { enabled: true },
+        },
+      },
+    };
+
+    const { config: result, actions } = removePluginFromConfig(config, "my-plugin");
+
+    expect(result.channels?.["my-plugin"]).toBeUndefined();
+    expect(result.channels?.telegram).toBeDefined();
+    expect(actions.channelConfig).toBe(true);
+  });
+
   it("removes plugins object when uninstall leaves only empty slots", () => {
     const config = createSinglePluginWithEmptySlotsConfig();
 
@@ -359,6 +385,46 @@ describe("uninstallPlugin", () => {
       expect(result.config.plugins?.installs).toBeUndefined();
       expect(result.actions.entry).toBe(true);
       expect(result.actions.install).toBe(true);
+    }
+  });
+
+  it("removes channel config to avoid unknown channel validation failures", async () => {
+    const config: OpenClawConfig = {
+      channels: {
+        chatmax: {
+          enabled: true,
+          botToken: "fake-token",
+        },
+        telegram: {
+          enabled: true,
+          botToken: "fake-telegram-token",
+        },
+      },
+      plugins: {
+        entries: {
+          chatmax: { enabled: true },
+        },
+        installs: {
+          chatmax: {
+            source: "path",
+            sourcePath: "/plugins/chatmax",
+            installPath: "/plugins/chatmax",
+          },
+        },
+      },
+    };
+
+    const result = await uninstallPlugin({
+      config,
+      pluginId: "chatmax",
+      deleteFiles: false,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config.channels?.chatmax).toBeUndefined();
+      expect(result.config.channels?.telegram).toBeDefined();
+      expect(result.actions.channelConfig).toBe(true);
     }
   });
 
